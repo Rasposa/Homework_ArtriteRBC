@@ -29,6 +29,7 @@ public:
   Case(std::string);
 };
 
+
 class RBC {
 private:
   std::vector<Case> cases;
