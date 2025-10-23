@@ -2,6 +2,7 @@
 
 #include <vector>
 #include <string>
+#include <fstream>
 
 
 
@@ -25,6 +26,7 @@ public:
   float  nr;
   float  hla_b27;
   float  dj;
+  std::string diagnos;
 
   Case(std::string);
 };
@@ -33,11 +35,14 @@ public:
 class RBC {
 private:
   std::vector<Case> cases;
+  std::fstream file;
 
 public:
   RBC(std::string);
   
-  virtual bool show_table();
-  virtual bool do_diagnosis(std::string);
-  virtual Case insert_case(std::string);
+  virtual bool        show_table();
+  virtual std::string do_diagnosis(std::string);
+  virtual Case        insert_case(std::string);
+
+  virtual std::vector<Case> get_cases() { return this->cases; }
 };

@@ -11,35 +11,37 @@
 RBC::RBC(std::string filename) {
   
   /* abre arquivo*/
-  std::ifstream file;
-  file.open(filename);
-  if (!file.is_open()) {
+  this->file.open(filename);
+  if (!this->file.is_open()) {
     std::cerr << "Error opening file: " << filename << std::endl;
   }
 
   /* cria um caso para cada linha */
   std::string line;
-  std::getline(file, line); // pula o cabeçalho
-  while (std::getline(file, line)) {
+  std::getline(this->file, line); // pula o cabeçalho
+  while (std::getline(this->file, line)) {
     Case new_case(line);
     cases.push_back(new_case);
   }
+
+  this->file.close();
 }
 
 
 /// @brief Mostra a tabela de casos carregados.
 /// @return true se a operação for bem-sucedida.
 bool RBC::show_table() {
-  std::cout << "ID\tDL\tRC\tDC\tMOB\tDTS\tIL\tER\tTCSE\tART\tRM\tBUR\tTOF\tSIN\tATG\tNR\tHLA_B27\tDJ\n";
+  std::cout << "ID\tDL\tRC\tDC\tMOB\tDTS\tIL\tER\tTCSE\tART\tRM\tBUR\tTOF\tSIN\tATG\tNR\tHLA_B27\tDJ\tDIAGNÓSTICO\n";
   for (const Case c : cases) {
     std::cout << c.index << "\t" << c.dl << "\t" << c.rc << "\t" << c.dc << "\t" << c.mob << "\t"
               << c.dts << "\t" << c.il << "\t" << c.er << "\t" << c.tcse << "\t"
               << c.art << "\t" << c.rm << "\t" << c.bur << "\t" << c.tof << "\t"
               << c.sin << "\t" << c.atg << "\t" << c.nr << "\t" << c.hla_b27 << "\t"
-              << c.dj << "\n";
+              << c.dj << "\t\t" << c.diagnos << "\n";
   }
   return true;
 }
+
 
 /// @brief Insere um novo caso na base de casos.
 /// @param line 
@@ -47,11 +49,21 @@ bool RBC::show_table() {
 Case RBC::insert_case(std::string line) {
   Case new_case = Case(line);
   cases.push_back(new_case);
+
+  this->file.open("casosArtrite.txt", std::ios::app);
+  if (!this->file.is_open()) {
+    std::cerr << "Error opening file for appending." << std::endl;
+  }
+  this->file << "\n" << line;
+  this->file.close();
+  
   return new_case;
 }
 
-
-bool RBC::do_diagnosis(std::string line) {
+/// @brief Insere um novo caso em uma nova linha no arquivo base
+/// @param line 
+/// @return uma string com o novo caso diagnosticado
+std::string RBC::do_diagnosis(std::string line) {
   Case query_case = Case(line);
   std::vector<std::pair<int, float>> differences;
   std::cout << "\n\n#### PESOS ####\n";
@@ -73,7 +85,7 @@ bool RBC::do_diagnosis(std::string line) {
 
 
   std::cout << "\n\n#### LISTA DO MAIS PARECIDA PARA A MENOS ####\n";
-  std::cout << "ID\tDL\tRC\tDC\tMOB\tDTS\tIL\tER\tTCSE\tART\tRM\tBUR\tTOF\tSIN\tATG\tNR\tHLA_B27\tDJ\tSIMILARIDADE\n";
+  std::cout << "ID\tDL\tRC\tDC\tMOB\tDTS\tIL\tER\tTCSE\tART\tRM\tBUR\tTOF\tSIN\tATG\tNR\tHLA_B27\tDJ\tSIMILARIDADE\tDIAGNÓSTICO\n";
 
   float soma_dos_pesos = 0.6f + 0.5f + 0.5f + 0.2f + 0.6f + 0.1f + 0.1f + 0.1f + 0.3f + 0.6f + 0.4f + 0.9f + 0.9f + 0.7f + 0.9f + 0.9f + 0.1f;
   for(Case c : cases) {
@@ -118,12 +130,17 @@ bool RBC::do_diagnosis(std::string line) {
               << c.dts << "\t" << c.il << "\t" << c.er << "\t" << c.tcse << "\t"
               << c.art << "\t" << c.rm << "\t" << c.bur << "\t" << c.tof << "\t"
               << c.sin << "\t" << c.atg << "\t" << c.nr << "\t" << c.hla_b27 << "\t"
-              << c.dj << "\t" << l_case.second << "%\n";
+              << c.dj << "\t" << l_case.second << "%     \t" << c.diagnos << "\n";
   }
-  return true;
+
+
+  /* cria string do caso diagnosticado */
+  return line + ";" + cases[differences[0].first - 1].diagnos;
 }
 
 
+
+/* objeto de dados para os casos */
 
 float get_string_value(std::string& str) {
   if (str == "sim") {
@@ -158,6 +175,8 @@ float get_string_value(std::string& str) {
 }
 
 Case::Case(std::string line) {
+
+  line += ";;;;;;;;;;;;;;;;;";
   std::stringstream ss(line);
   std::string token;
   
@@ -179,4 +198,5 @@ Case::Case(std::string line) {
   std::getline(ss, token, ';'); this->nr      = get_string_value(token); // nr
   std::getline(ss, token, ';'); this->hla_b27 = get_string_value(token); // hla_b27
   std::getline(ss, token, ';'); this->dj      = get_string_value(token); // dj
+  std::getline(ss, token, ';'); this->diagnos = token;                   // diagnostico
 }
